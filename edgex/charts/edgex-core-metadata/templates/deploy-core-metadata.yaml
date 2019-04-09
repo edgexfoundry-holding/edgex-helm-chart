@@ -1,0 +1,40 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-core-metadata
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-core-metadata
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-core-metadata
+    spec:
+      containers:
+      - name: edgex-core-metadata
+        image: {{ .Values.image }}
+        ports:
+        - containerPort: 48081
+        #command: ["/core-metadata","--profile=docker","--confdir=/res"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        readinessProbe:
+          httpGet:
+            path: /api/v1/ping
+            port: 48081
+          initialDelaySeconds: 5
+        volumeMounts:
+        - name: core-metadata-volume
+          mountPath: /res/docker/configuration.toml
+          subPath: configuration.toml
+      volumes:
+      - name: core-metadata-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-core-metadata
+

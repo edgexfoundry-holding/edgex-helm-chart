@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-edgex-core-command
+data:
+  configuration.toml: |
+    [Writable]
+    LogLevel = 'INFO'
+
+    [Service]
+    BootTimeout = 30000
+    ClientMonitor = 15000
+    CheckInterval = '10s'
+    Host = '{{ .Release.Name }}-edgex-core-command'
+    Port = 48082
+    Protocol = 'http'
+    ReadMaxLimit = 100
+    StartupMsg = 'This is the Core Command Microservice'
+    Timeout = 5000
+
+    [Registry]
+    Host = '{{ .Release.Name }}-edgex-core-consul'
+    Port = 8500
+    Type = 'consul'
+
+    [Logging]
+    EnableRemote = false
+    File = '/edgex/logs/edgex-core-command.log'
+
+    [Clients]
+      [Clients.Metadata]
+      Protocol = 'http'
+      Host = '{{ .Release.Name }}-edgex-core-metadata'
+      Port = 48081
+
+      [Clients.Logging]
+      Protocol = 'http'
+      Host = '{{ .Release.Name }}-edgex-support-logging'
+      Port = 48061

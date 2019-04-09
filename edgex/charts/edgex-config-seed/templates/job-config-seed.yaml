@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  creationTimestamp: null
+  name: "{{ .Release.Name }}-edgex-config-seed"
+spec:
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+{{ if .Values.init_wait }}
+      initContainers:
+      - name: wait-svc
+        image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.0
+        env:
+        - name: DEPENDENCY_SERVICE
+          value: "{{ .Release.Name }}-edgex-core-consul"
+        - name: COMMAND
+          value: "sleep 1"
+{{ end }}
+      containers:
+      - image: edgexfoundry/docker-core-config-seed-go:0.7.1
+        name: "{{ .Release.Name }}-edgex-config-seed"
+        resources: {}
+        #command: ["/edgex/cmd/config-seed/config-seed","--profile=docker","--cmd=/edgex/cmd"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        volumeMounts:
+        - name: config-seed-volume
+          mountPath: /edgex/cmd/config-seed/res/docker/configuration.toml
+          subPath: configuration.toml
+        # experimental core-command config map for consul seed
+        # mounts the cm from core-command so it can populate consul
+#        - name: core-command-volume
+#          mountPath: /edgex/cmd/core-command/res/docker/configuration.toml
+#          subPath: configuration.toml
+      restartPolicy: Never
+      volumes:
+      - name: config-seed-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-config-seed
+      # experimental core-command config map for consul seed
+#      - name: core-command-volume
+#        configMap:
+#          name: {{ .Release.Name }}-edgex-core-command
+

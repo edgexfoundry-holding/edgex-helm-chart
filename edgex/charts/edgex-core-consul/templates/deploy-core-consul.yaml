@@ -1,0 +1,43 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-core-consul
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-core-consul
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-core-consul
+    spec:
+      containers:
+      - name: edgex-core-consul
+        image: {{ .Values.image }}
+        ports:
+        - containerPort: 8300
+        - containerPort: 8400
+        - containerPort: 8500
+        - containerPort: 8600
+        #command: ["/bin/sh", "-c", "docker-entrypoint.sh agent -dev -client 0.0.0.0"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        volumeMounts:
+        - name: core-consul-volume
+          mountPath: /res/docker/configuration.toml
+          subPath: configuration.yaml
+#        readinessProbe:
+#          httpGet:
+#            path: /ui/
+#            port: 8500
+#          initialDelaySeconds: 30
+      volumes:
+      - name: core-consul-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-core-consul
+

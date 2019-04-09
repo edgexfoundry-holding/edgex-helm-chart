@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: 
+  name: {{ .Release.Name }}-edgex-core-data
+data:
+  configuration.toml: |
+    DeviceUpdateLastConnected = false
+    MetaDataCheck = false
+    PersistData = true
+    ServiceUpdateLastConnected = false
+    ValidateCheck = false
+
+    [Service]
+    BootTimeout = 30000
+    ClientMonitor = 15000
+    CheckInterval = '10s'
+    Host = '{{ .Release.Name }}-edgex-core-data'
+    Port = 48080
+    Protocol = 'http'
+    ReadMaxLimit = 100
+    StartupMsg = 'This is the Core Data Microservice'
+    Timeout = 5000
+
+    [Registry]
+    Host = '{{ .Release.Name }}-edgex-core-consul'
+    Port = 8500
+    Type = 'consul'
+
+    [Logging]
+    EnableRemote = true
+    File = '/edgex/logs/edgex-core-data.log'
+
+    [Clients]
+      [Clients.Metadata]
+      Protocol = 'http'
+      Host = '{{ .Release.Name }}-edgex-core-metadata'
+      Port = 48081
+
+      [Clients.Logging]
+      Protocol = 'http'
+      Host = '{{ .Release.Name }}-edgex-support-logging'
+      Port = 48061
+
+    [Databases]
+      [Databases.Primary]
+      Host = '{{ .Release.Name }}-edgex-mongo'
+      Name = 'coredata'
+      Password = 'password'
+      Port = 27017
+      Username = 'core'
+      Timeout = 5000
+      Type = 'mongodb'
+
+    [MessageQueue]
+    Protocol = 'tcp'
+    Host = '*'
+    Port = 5563
+    Type = 'zero'

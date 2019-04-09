@@ -1,0 +1,37 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-core-data
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-core-data
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-core-data
+    spec:
+      containers:
+      - name: edgex-core-data
+        image: {{ .Values.image }}
+        ports:
+        - containerPort: 48080
+          name: "p48080"
+        - containerPort: 5563
+          name: "p5563"
+        #command: ["/core-data","--consul","--profile=docker","--confdir=/res"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        volumeMounts:
+        - name: core-data-volume
+          mountPath: /res/docker/configuration.toml
+          subPath:  configuration.toml
+      volumes:
+      - name: core-data-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-core-data

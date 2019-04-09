@@ -1,0 +1,46 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-device-virtual
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-device-virtual
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-device-virtual
+    spec:
+      containers:
+      - name: edgex-device-virtual
+        image: {{ .Values.image }}
+        env:
+        - name: PATH
+          value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        - name: APP_DIR
+          value: "/edgex/edgex-device-virtual"
+        - name: APP
+          value: "device-virtual.jar"
+        - name: APP_PORT
+          value: "49990"
+        ports:
+        - containerPort: 49990
+        #command: ["/bin/sh", "-c", "java -jar -Djava.security.egd=file:/dev/urandom -Xmx100M $APP_DIR/$APP"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        volumeMounts:
+        - name: device-virtual-volume
+          mountPath: /edgex/edgex-device-virtual/bootstrap.properties
+          subPath: bootstrap.properties
+        - name: device-virtual-volume
+          mountPath: /edgex/edgex-device-virtual/application.properties
+          subPath: application.properties
+      volumes: 
+      - name: device-virtual-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-device-virtual

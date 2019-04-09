@@ -1,0 +1,92 @@
+dependencies:
+  - name: edgex-core-command
+    version: "*"
+    repository: "file://../src/edgex-core-command"
+    condition: edgex-core-command.enabled
+
+  - name: edgex-core-consul
+    version: "*"
+    repository: "file://../src/edgex-core-consul"
+    condition: edgex-core-consul.enabled
+
+  - name: edgex-core-data
+    version: "*"
+    repository: "file://../src/edgex-core-data"
+    condition: edgex-core-data.enabled
+
+  - name: edgex-core-metadata
+    version: "*"
+    repository: "file://../src/edgex-core-metadata"
+    condition: edgex-core-metadata.enabled
+
+  - name: edgex-device-virtual
+    version: "*"
+    repository: "file://../src/edgex-device-virtual"
+    condition: edgex-device-virtual.enabled
+
+  - name: edgex-export-client
+    version: "*"
+    repository: "file://../src/edgex-export-client"
+    condition: edgex-export-client.enabled
+
+  - name: edgex-export-distro
+    version: "*"
+    repository: "file://../src/edgex-export-distro"
+    condition: edgex-export-distro.enabled
+
+  - name: edgex-mongo
+    version: "*"
+    repository: "file://../src/edgex-mongo"
+    condition: edgex-mongo.enabled
+
+  - name: edgex-support-logging
+    version: "*"
+    repository: "file://../src/edgex-support-logging"
+    condition: edgex-support-logging.enabled
+
+  - name: edgex-support-notifications
+    version: "*"
+    repository: "file://../src/edgex-support-notifications"
+    condition: edgex-support-notifications.enabled
+
+  - name: edgex-support-rulesengine
+    version: "*"
+    repository: "file://../src/edgex-support-rulesengine"
+    condition: edgex-support-rulesengine.enabled
+
+  - name: edgex-support-scheduler
+    version: "*"
+    repository: "file://../src/edgex-support-scheduler"
+    condition: edgex-support-scheduler.enabled
+
+  - name: edgex-config-seed
+    version: "*"
+    repository: "file://../src/edgex-config-seed"
+    condition: edgex-config-seed.enabled
+
+  - name: edgex-ui-go
+    version: "*"
+    repository: "file://../src/edgex-ui-go"
+    condition: edgex-ui-go.enabled
+
+# API Security Gateway
+
+  - name: edgex-vault
+    version: "*"
+    repository: "file://../src/edgex-vault"
+    condition: edgex-vault.enabled
+
+  - name: edgex-kong
+    version: "*"
+    repository: "file://../src/edgex-kong"
+    condition: edgex-kong.enabled
+
+  - name: edgex-kong-db
+    version: "*"
+    repository: "file://../src/edgex-kong-db"
+    condition: edgex-kong-db.enabled
+
+  - name: edgex-blackbox-testing
+    version: "*"
+    repository: "file://../src/edgex-blackbox-testing"
+    condition: edgex-blackbox-testing.enabled

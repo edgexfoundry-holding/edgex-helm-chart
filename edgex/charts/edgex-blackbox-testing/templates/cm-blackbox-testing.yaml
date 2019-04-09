@@ -1,0 +1,187 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-edgex-blackbox-testing
+data:
+  mongo_seed.sh: |
+
+    #!/bin/bash
+
+    export EXK8S_DATADUMPS=/etc/newman/DataDumps
+    export EXK8S_HOST=${1-:localhost}
+    export EXK8S_USER=admin
+    export EXK8S_PASSWORD=admin
+    export EXK8S_TMP=tmp
+    LAST_DIR=$(pwd)
+
+    function cleanup {
+      cd $LAST_DIR
+      rm -rf ${EXK8S_TMP}
+    }
+    trap cleanup EXIT
+
+    # setup a work dir
+    rm -rf ${EXK8S_TMP}
+    mkdir -p ${EXK8S_TMP}
+
+    # copy all json files
+    find ${EXK8S_DATADUMPS} -name *.json -exec cp {} ${EXK8S_TMP} \;
+
+    # create list of all import commands
+    grep -rh mongoimport ${EXK8S_DATADUMPS}/* >> ${EXK8S_TMP}/prepare.txt
+
+    cd ${EXK8S_TMP}
+
+    # loop thru commands, appending host, user etc
+    while read line;    do
+         $line -h ${EXK8S_HOST}
+    done < "prepare.txt"
+
+
+
+  k8s_test.sh: |
+    #!/bin/bash
+
+    ###
+    # Extracts newman commands from blackbox testing and runs them in k8s
+    ##
+
+    TMP_FILE="$(mktemp)"
+    TMP2_FILE="$(mktemp)"
+
+    cd /test
+
+    NAMESFILE=$(dirname "$0")/files.sh
+    if [ -f $NAMESFILE ]; then
+
+        . $NAMESFILE
+
+    else
+        echo "Error: Names file does not exist."
+        exit $?
+
+    fi
+    function cleanup {
+      rm -rf ${TMP_FILE}
+      rm -rf ${TMP2_FILE}
+    }
+    trap cleanup EXIT
+
+    # replace baseUrl with localhost
+    fixURL(){
+      LASTDIR=$(pwd)
+      cd /etc/newman/collections
+      sed -i s/\{\{baseUrl\}\}/localhost:$2/g $1
+      cd $LASTDIR
+    }
+    cd postman-test
+
+    # process_file extracts newman commands and runs them
+    process_file(){
+      # join multiline commands
+      awk '/^#/ {next} sub(/\\$/,""){printf("%s", $0);next};1' $1 > $TMP_FILE
+
+      # get the command past run
+      grep -h -Po "postman.*run\K(.*)$" $TMP_FILE > $TMP2_FILE
+
+      while read cmd
+      do
+        # eval ensures env vars are parsed
+        echo $(eval "echo $cmd")
+        eval newman run $cmd
+      done < $TMP2_FILE
+
+    }
+
+
+    ## core data
+
+    socat tcp-listen:48080,reuseaddr,fork tcp:{{ .Release.Name }}-edgex-core-data:48080 &
+
+    ENV_PATH=/etc/newman/environment/CoredataEnv.postman_environment.json
+    COLLECTION_PATH=/etc/newman/collections/core-data.postman_collection.json
+
+    #fixURL $COLLECTION_PATH 48080
+    process_file /test/coreDataTest.sh
+
+
+    ###
+    # core command
+    # edgex-core-command:48082
+    ##
+
+    socat tcp-listen:48082,reuseaddr,fork tcp:{{ .Release.Name }}-edgex-core-command:48082 &
+
+    ENV_PATH=/etc/newman/environment/command.postman_environment.json
+    COLLECTION_PATH=/etc/newman/collections/core-command.postman_collection.json
+
+    process_file /test/commandTest.sh
+
+
+    ###
+    # core metadata
+    # edgex-core-metadata:48081
+    ##
+
+    socat tcp-listen:48081,reuseaddr,fork tcp:{{ .Release.Name }}-edgex-core-metadata:48081 &
+
+    ENV_PATH=/etc/newman/environment/MetadataEnv.postman_environment.json
+    COLLECTION_PATH=/etc/newman/collections/core-metadata.postman_collection.json
+
+    process_file /test/metadataTest.sh
+
+
+    ###
+    # support logging
+    # edgex-support-logging:48061
+    ##
+
+    socat tcp-listen:48061,reuseaddr,fork tcp:{{ .Release.Name }}-edgex-support-logging:48061 &
+
+    ENV_PATH=/etc/newman/environment/support-logging.postman_environment.json
+    COLLECTION_PATH=/etc/newman/collections/support-logging.postman_collection.json
+
+    process_file /test/loggingTest.sh
+
+    ###
+    # export client
+    # edgex-export-client:48071
+    ##
+
+    socat tcp-listen:48071,reuseaddr,fork tcp:{{ .Release.Name }}-edgex-export-client:48071 &
+
+    ENV_PATH=/etc/newman/environment/export-client.postman_environment.json
+    COLLECTION_PATH=/etc/newman/collections/export-client.postman_collection.json
+
+    process_file /test/exportClientTest.sh
+
+    ###
+    # rulesengine
+    # edgex-support-rulesengine:48075
+    ##
+
+    socat tcp-listen:48075,reuseaddr,fork tcp:{{ .Release.Name }}-edgex-support-rulesengine:48075 &
+
+    ENV_PATH=/etc/newman/environment/support-rulesengine.postman_environment.json
+    COLLECTION_PATH=/etc/newman/collections/support-rulesengine.postman_collection.json
+
+    process_file /test/rulesengineTest.sh
+
+    ###
+    # support notifications
+    # edgex-support-rulesengine:48060
+    ##
+
+    socat tcp-listen:48060,reuseaddr,fork tcp:{{ .Release.Name }}-edgex-support-notifications:48060 &
+
+    ENV_PATH=/etc/newman/environment/support-notification.postman_environment.json
+    COLLECTION_PATH=/etc/newman/collections/support-notifications.postman_collection.json
+
+    process_file /test/supportNotificationsTest.sh
+
+
+
+
+
+
+

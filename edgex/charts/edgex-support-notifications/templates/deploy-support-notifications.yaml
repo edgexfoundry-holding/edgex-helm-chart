@@ -1,0 +1,38 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-support-notifications
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-support-notifications
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-support-notifications
+    spec:
+      containers:
+      - name: edgex-support-notifications
+        image: {{ .Values.image }}
+        env:
+        - name: PATH
+          value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ports:
+        - containerPort: 48060
+        #command: ["/support-notifications","--profile=docker","--confdir=/res"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        volumeMounts:
+        - name: support-notifications-volume
+          mountPath: /res/docker/configuration.toml
+          subPath: configuration.toml
+      volumes:
+      - name: support-notifications-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-support-notifications
+
