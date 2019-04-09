@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-edgex-blackbox-testing
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  restartPolicy: Never
+  hostAliases:
+  - ip: "127.0.0.1"
+    hostnames:
+    - "edgex-core-command"
+    - "edgex-core-data"
+    - "edgex-core-metadata"
+  initContainers:
+  - name: wait-svc
+    image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.0
+    env:
+    - name: DEPENDENCY_SERVICE
+      value: "{{ .Release.Name }}-edgex-mongo"
+    - name: COMMAND
+      value: "sleep 1"
+
+  - name: mongo-init
+    image: ubuntu:14.04
+
+  containers:
+  - name: edgex-blackbox-testing
+    image: {{ .Values.image }}
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 48082
+    env:
+    - name: EDGEXK8S_HOST
+      value: {{ .Release.Name }}-edgex-mongo
+    volumeMounts:
+    - name: blackbox-testing-volume
+      mountPath: /test/mongo_seed.sh
+      subPath: mongo_seed.sh
+    - name: blackbox-testing-volume
+      mountPath: /test/k8s_test.sh
+      subPath: k8s_test.sh
+    command: ["/bin/bash","-c"]
+    args: ["/test/mongo_seed.sh $EDGEXK8S_HOST; /test/k8s_test.sh; sleep 9999"]
+  volumes:
+  - name: blackbox-testing-volume
+    configMap:
+      name: {{ .Release.Name }}-edgex-blackbox-testing
+      defaultMode: 0744

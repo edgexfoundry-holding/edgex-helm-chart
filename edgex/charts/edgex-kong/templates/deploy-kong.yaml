@@ -1,0 +1,76 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-kong
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-kong
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-kong
+    spec:
+{{ if .Values.init_wait }}
+      initContainers:
+      - name: wait-svc
+        image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.0
+        env:
+        - name: DEPENDENCY_SERVICE
+          value: "{{ .Release.Name }}-edgex-kong-db"
+        - name: COMMAND
+          value: "sleep 1"
+{{ end }}
+      containers:
+      - name: edgex-kong
+        image: {{ .Values.image }}
+        ports:
+        - containerPort: 8000
+          name: "tcp8000"
+        - containerPort: 8001
+          name: "admin"
+        - containerPort: 8443
+          name: "tcp8443"
+        - containerPort: 8444
+          name: "tcp8444"
+        env:
+        - name: KONG_DATABASE
+          value: postgres
+        - name: KONG_PG_HOST
+          value: "{{ .Release.Name }}-edgex-kong-db"
+        - name: KONG_PROXY_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_ADMIN_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_PROXY_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_LISTEN
+          value: "0.0.0.0:8001, 0.0.0.0:8444 ssl"
+        command: ["/bin/sh"]
+        args: ["-c", "/docker-entrypoint.sh kong migrations up --vv; /docker-entrypoint.sh /usr/local/openresty/nginx/sbin/nginx -c /usr/local/kong/nginx.conf -p /usr/local/kong/"]
+        readinessProbe:
+          httpGet:
+            path: "/status"
+            port: admin
+            scheme: HTTP
+          initialDelaySeconds: 120
+          timeoutSeconds: 1
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 5
+
+        livenessProbe:
+          httpGet:
+            path: "/status"
+            port: admin
+            scheme: HTTP
+          initialDelaySeconds: 180
+          timeoutSeconds: 5
+          periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 5

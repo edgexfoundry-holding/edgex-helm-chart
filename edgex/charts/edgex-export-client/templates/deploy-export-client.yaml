@@ -1,0 +1,46 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-export-client
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-export-client
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-export-client
+    spec:
+{{ if .Values.init_wait }}
+      initContainers:
+      - name: wait-svc-consul
+        image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.0
+        env:
+        - name: DEPENDENCY_SERVICE
+          value: "edgex-core-consul,edgex-support-logging"
+        - name: COMMAND
+          value: "sleep 1"
+{{ end }}
+      containers:
+      - name: edgex-export-client
+        image: {{ .Values.image }}
+        env:
+        ports:
+        - containerPort: 48071
+        #command: ["/export-client","--profile=docker","--confdir=/res"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        volumeMounts:
+        - name: export-client-volume
+          mountPath: /res/docker/configuration.toml
+          subPath: configuration.toml
+      volumes:
+      - name: export-client-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-export-client
+

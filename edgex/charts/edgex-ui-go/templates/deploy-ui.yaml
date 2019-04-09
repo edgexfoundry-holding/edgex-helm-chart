@@ -1,0 +1,25 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-ui
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "edgex.releaseName" . }}-edgex-ui
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-ui
+    spec:
+      containers:
+      - name: edgex-ui
+        image: {{ .Values.image }}
+        env:
+        - name: PATH
+          value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ports:
+        - containerPort: 4000
+        command: ["./edgex-ui-go"]

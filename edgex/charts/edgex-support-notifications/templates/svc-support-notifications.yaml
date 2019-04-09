@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-edgex-support-notifications
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  ports:
+  - port: 48060
+    protocol: TCP
+  selector:
+    app: {{ .Release.Name }}-edgex-support-notifications

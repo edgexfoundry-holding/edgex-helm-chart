@@ -1,0 +1,2 @@
+image: "kong:0.13.0"
+init_wait: true

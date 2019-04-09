@@ -1,0 +1,96 @@
+# delhi release
+
+edgex-core-command:
+  enabled: true
+  image: nexus3.edgexfoundry.org:10004/docker-core-command-go:0.7.1
+  command: ["/core-command", "-p", "docker"]
+  init_wait: false
+
+edgex-core-consul:
+  enabled: true
+  image: consul:1.1.0
+  command: ["/bin/sh", "-c", "docker-entrypoint.sh agent -dev -client 0.0.0.0"]
+
+edgex-core-data:
+  enabled: true
+  image: nexus3.edgexfoundry.org:10004/docker-core-data-go:0.7.1
+  command: ["/core-data", "-p", "docker"]
+
+edgex-core-metadata:
+  enabled: true
+  image: nexus3.edgexfoundry.org:10004/docker-core-metadata-go:0.7.1
+  command: ["/core-metadata","--profile=docker","--confdir=/res"]
+
+edgex-device-virtual:
+  enabled: true
+  image: edgexfoundry/docker-device-virtual:0.6.0
+  command: ["/bin/sh", "-c", "java -jar -Djava.security.egd=file:/dev/urandom -Xmx100M $APP_DIR/$APP"]
+
+edgex-export-client:
+  enabled: true
+  image: nexus3.edgexfoundry.org:10004/docker-export-client-go:0.7.1
+  command: ["/export-client","--profile=docker","--confdir=/res"]
+
+edgex-export-distro:
+  enabled: true
+  image: nexus3.edgexfoundry.org:10004/docker-export-distro-go:0.7.1
+  command: ["/bin/sh", "-c", "/export-distro"]
+
+edgex-mongo:
+  enabled: true
+  image: edgexfoundry/docker-edgex-mongo:0.8.0
+
+edgex-support-logging:
+  enabled: true
+  image: edgexfoundry/docker-support-logging-go:0.7.1
+  command: ["/support-logging","--profile=docker","--confdir=/res"]
+
+edgex-support-notifications:
+  enabled: true
+  image: nexus3.edgexfoundry.org:10004/docker-support-notifications-go:0.7.1
+  command: ["/support-notifications","--profile=docker","--confdir=/res"]
+
+edgex-support-rulesengine:
+  enabled: true
+  image: nexus3.edgexfoundry.org:10004/docker-support-rulesengine:0.7.1
+  command: ["/bin/sh", "-c", "java -jar -Djava.security.egd=file:/dev/urandom -Xmx100M $APP"]
+
+edgex-support-scheduler:
+  enabled: true
+  image: edgexfoundry/docker-support-scheduler-go:0.7.1
+  command: ["/support-scheduler","--profile=docker"]
+
+# Config seed will populate consul config
+edgex-config-seed:
+  enabled: true
+  image: edgexfoundry/docker-core-config-seed-go:0.7.1
+  init_wait: True
+  command: ["/edgex/cmd/config-seed/config-seed","--profile=docker","--cmd=/edgex/cmd"]
+
+edgex-ui-go:
+  enabled: true
+  image: badboyqiao/edgex-ui-go:0.1
+
+# Black Box Testing
+
+edgex-blackbox-testing:
+  image: edgexfoundry/blackbox-testing:latest
+  enabled: true
+
+# API Security Gateway
+
+edgex-kong:
+  image: "kong:0.13.0"
+  enabled: true
+
+edgex-kong-db:
+  enabled: true
+  image: "postgres:9.5"
+
+edgex-vault:
+  enabled: true
+  image: edgexfoundry/docker-edgex-security-vault:0.1.1
+  workerImage: edgexfoundry/docker-edgex-security-vault-worker:0.1.1
+
+
+

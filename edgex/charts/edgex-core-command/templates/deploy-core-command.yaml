@@ -1,0 +1,45 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-core-command
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-core-command
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-core-command
+    spec:
+{{ if .Values.init_wait }}
+      initContainers:
+      - name: wait-svc
+        image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.0
+        env:
+        - name: DEPENDENCY_SERVICE
+          value: "edgex-core-consul,edgex-support-logging"
+        - name: COMMAND
+          value: "sleep 1"
+{{ end }}
+      containers:
+      - name: edgex-core-command
+        image: {{ .Values.image }}
+        ports:
+        - containerPort: 48082
+        #command: ["/core-command","--consul","--profile=docker","--confdir=/res"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        volumeMounts:
+        - name: core-command-volume
+          mountPath: /res/docker/configuration.toml
+          subPath: configuration.toml
+
+      volumes:
+      - name: core-command-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-core-command

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: 
+  name: {{ .Release.Name }}-edgex-core-consul
+data:
+  configuration.toml: |
+
+    ConfigPath = './config'
+    GlobalPrefix = 'config'
+    ConsulProtocol = 'http'
+    ConsulHost = 'localhost'
+    ConsulPort = 8500
+    IsReset = true
+    FailLimit = 30
+    FailWaitTime = 3
+    AcceptablePropertyExtensions = ['.toml','.yaml', '.yml', '.properties']
+    YamlExtensions = ['.yaml','.yml']
+    TomlExtensions = ['.toml']
+    EnableRemoteLogging = false
+    LoggingFile = './logs/config-seed.log'
+    LoggingRemoteURL = 'http://{{ .Release.Name }}-edgex-support-logging:48061/api/v1/logs'

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-edgex-core-consul
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  ports:
+  - port: 8300
+    protocol: TCP
+    name: "8300"
+  - port: 8400
+    protocol: TCP
+    name: "8400"
+  - port: 8500
+    protocol: TCP
+    name: "8500"
+  - port: 8600
+    protocol: TCP
+    name: "8600"
+
+  selector:
+    app: {{ .Release.Name }}-edgex-core-consul

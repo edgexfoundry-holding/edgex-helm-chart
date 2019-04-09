@@ -1,0 +1,35 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-support-scheduler
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-support-scheduler
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-support-scheduler
+    spec:
+      containers:
+      - name: edgex-support-scheduler
+        image: {{ .Values.image }}
+        ports:
+        - containerPort: 48085
+        #command: ["/support-scheduler","--profile=docker"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        volumeMounts:
+        - name: support-scheduler-volume
+          mountPath: /res/docker/configuration.toml
+          subPath: configuration.toml
+      volumes:
+      - name: support-scheduler-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-support-scheduler
+

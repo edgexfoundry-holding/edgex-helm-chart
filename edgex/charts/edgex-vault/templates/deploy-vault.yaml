@@ -1,0 +1,81 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-vault
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-vault
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-vault
+    spec:
+      initContainers:
+      - name: edgex-proxy
+        image: edgexfoundry/docker-edgex-proxy-go:0.1.1
+        command: ["/bin/sh"]
+        args: ["-c","cp /edgex/edgexproxy /share"]
+        volumeMounts:
+        - name: vault-shared
+          mountPath: /share
+      - name: vault-worker
+        image: {{ .Values.workerImage }}
+        volumeMounts:
+        - name: vault-shared
+          mountPath: /share
+        command: ["/bin/bash"]
+        args: ["-c","cp /vault/*.* /share; touch /share/complete"]
+      containers:
+      - name: edgex-vault
+        image: {{ .Values.image }}
+        ports:
+        - containerPort: 8200
+          name: api
+        - containerPort: 8201
+          name: cluster-address
+        command: ["/bin/sh"]
+        args: ["-c", "/vault/vault_worker_wrapper.sh"]
+        env:
+        - name: VAULT_ADDR
+          value: "https://{{ .Release.Name }}-edgex-vault:8200"
+        - name: VAULT_CONFIG_DIR
+          value: "/vault/config"
+        - name: VAULT_UI
+          value: "true"
+        - name: WATCHDOG_DELAY
+          value: 3m
+        - name: _KONG_SVC
+          value: "{{ .Release.Name }}-edgex-kong"
+        securityContext:
+          capabilities:
+            add: ["IPC_LOCK"]
+        volumeMounts:
+        - name: vault-volume
+          mountPath: /vault/config/local.json
+          subPath: local.json
+        - name: vault-volume
+          mountPath: /vault/pki-setup-config-kong.env
+          subPath: pki-setup-config-kong.env
+        - name: vault-shared
+          mountPath: /share
+        - name: vault-volume
+          mountPath: /vault/vault_worker_wrapper.sh
+          subPath: vault_worker_wrapper.sh
+        - name: proxy-volume
+          mountPath: /share/res/configuration.toml
+          subPath: configuration.toml
+
+      volumes:
+      - name: vault-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-vault
+          defaultMode: 0744
+      - name: vault-shared
+        emptyDir: {}
+      - name: proxy-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-proxy

@@ -1,0 +1,19 @@
+image: badboyqiao/edgex-ui-go:0.1
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://ui.edgex.loc"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    # kubernetes.io/tls-acme: "true"
+  path: /
+  hosts:
+    - ui.edgex.loc
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+service:
+  port: 4000

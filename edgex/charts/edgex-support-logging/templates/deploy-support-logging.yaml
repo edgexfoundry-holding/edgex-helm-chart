@@ -1,0 +1,40 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-support-logging
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-support-logging
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-support-logging
+    spec:
+      containers:
+      - name: edgex-support-logging
+        image: {{ .Values.image }}
+        ports:
+        - containerPort: 48061
+        #command: ["/support-logging","--profile=docker","--confdir=/res"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        volumeMounts:
+        - name: support-logging-volume
+          mountPath: /res/docker/configuration.toml
+          subPath: configuration.toml
+#        readinessProbe:
+#          httpGet:
+#            path: /api/v1/logs/1
+#            port: 48061
+#          initialDelaySeconds: 30
+      volumes:
+      - name: support-logging-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-support-logging
+

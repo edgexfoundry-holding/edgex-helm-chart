@@ -1,0 +1,32 @@
+edgex-core-command:
+  enabled: true
+  image: edgexfoundry/docker-core-command-go:1.0.0-dev
+  init_wait: false
+
+edgex-core-data:
+  enabled: true
+  image: edgexfoundry/docker-core-data-go:1.0.0-dev
+
+edgex-core-metadata:
+  enabled: true
+  image: edgexfoundry/docker-core-metadata-go:1.0.0-dev
+
+edgex-export-client:
+  enabled: true
+  image: edgexfoundry/docker-export-client-go:1.0.0-dev
+
+edgex-export-distro:
+  enabled: true
+  image: edgexfoundry/docker-export-distro-go:1.0.0-dev
+
+edgex-support-logging:
+  enabled: true
+  image: edgexfoundry/docker-support-logging-go:1.0.0-dev
+
+edgex-support-notifications:
+  enabled: true
+  image: edgexfoundry/docker-support-notifications-go:1.0.0-dev
+
+edgex-support-rulesengine:
+  image: nexus3.edgexfoundry.org:10004/docker-support-rulesengine:1.0.0-dev
+

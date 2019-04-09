@@ -1,0 +1,157 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-edgex-vault
+data:
+  local.json: |
+
+    listener "tcp" {
+      address = "0.0.0.0:8200"
+      tls_disable = "0"
+      cluster_address = "0.0.0.0:8201"
+      tls_min_version = "tls12"
+      tls_client_ca_file ="/vault/pki/EdgeXFoundryTrustCA/EdgeXFoundryTrustCA.pem"
+      tls_cert_file ="/vault/pki/EdgeXFoundryTrustCA/edgex-vault.pem"
+      tls_key_file = "/vault/pki/EdgeXFoundryTrustCA/edgex-vault.priv.key"
+    }
+
+    backend "consul" {
+      path = "vault/"
+      address = "{{ .Release.Name }}-edgex-core-consul:8500"
+      scheme = "http"
+      redirect_addr = "https://{{ .Release.Name }}-edgex-vault:8200"
+      cluster_addr = "https://{{ .Release.Name }}-edgex-vault:8201"
+    }
+
+    default_lease_ttl = "168h"
+    max_lease_ttl = "720h"
+
+  pki-setup-config-kong.env: |
+
+    #  ----------------------------------------------------------------------------------
+    #  pki-setup-config-kong.env	version 1.0 created June 13, 2018
+    #
+    #  @author:  Alain Pulluelo, ForgeRock
+    #  @email:   alain.pulluelo@forgerock.com
+    #  @address: 201 Mission St, Suite 2900
+    #            San Francisco, CA 94105, USA
+    #  @phone:   +1(415)-559-1100
+    #
+    #  Copyright (c) 2018, ForgeRock
+    #
+    #  Licensed under the Apache License, Version 2.0 (the "License");
+    #  you may not use this file except in compliance with the License.
+    #  You may obtain a copy of the License at
+    #
+    #    http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    #  limitations under the License.
+    #  ----------------------------------------------------------------------------------
+    #
+    CREATE_CA=false
+    #
+    SETUP_HOME=/vault
+    SETUP_PKI=${SETUP_HOME}/pki
+    #
+    # TLS Server FQDN: "HOST.DOMAIN"
+    #
+    HOST={{ .Release.Name }}-edgex-kong
+    DOMAIN="local"
+    #
+    # TLS server and CA organisation
+    #
+    ORG="EdgeXFoundry"
+    #
+    # TLS Server Certificate
+    #
+    TLS_C="US"
+    TLS_ST="CA"
+    TLS_L="San Francisco"
+    TLS_O=${ORG}
+    #
+    # CA Cerificate
+    #
+    CA_C="US"
+    CA_ST="CA"
+    CA_L="San Francisco"
+    CA_O=${ORG}
+    #
+    # PKCS12 container password
+    PKCS12_PASSWORD="s3cr3tp4th"
+    #
+
+  vault_worker_wrapper.sh: |
+
+    #!/bin/sh
+
+    #  ----------------------------------------------------------------------------------
+    # Copyright 2019 Intel
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #    http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    #  ----------------------------------------------------------------------------------
+
+    ###
+    # Installs extra deps for vault worker and edgexproxy
+    # Adds edgex-proxy to /etc/hosts for loopback for local vault worker access
+    # Starts vault worker which waits on vault and adds edgex items to vault
+    # Starts edgexproxy which waits on kong and configures kong for edgex
+    # Starts vault
+    ##
+
+    worker(){
+        while [ "$status" != "true" ]
+        do
+          # here edgex-vault is loopback. see main below.
+          if [ "$(curl -k -s -o /dev/null -w "%{http_code}" https://edgex-vault:8200/v1/sys/health | grep 501)" != "" ]; then
+            # success
+            status="true"
+            cd /vault
+            /vault/vault-worker.sh &
+
+          fi
+          echo "Waiting for vault /sys/health"
+          sleep 2;
+        done
+    }
+    proxy(){
+        while [ "$status" != "true" ]
+        do
+          if [ "$(curl -k -s -o /dev/null -w "%{http_code}" http://{{ .Release.Name }}-edgex-kong:8001/status | grep 200)" != "" ]; then
+            # success
+            status="true"
+            cd /vault
+            /share/edgexproxy --init=true --useradd guest &
+
+          fi
+          echo "Waiting for kong /status"
+          sleep 2;
+        done
+    }
+    # TODO dont mutate the container :|
+    apk --update add bash curl jq bind-tools openssl
+    # wait on complete file
+    while [[ ! -f /share/complete ]]; do sleep 1; done;
+    echo "copying worker files from /share to /vault"
+    cp -R /share/* /vault
+    # so worker can use loopback via edgex-vault name
+    echo "127.0.0.1    edgex-vault" >> /etc/hosts
+    echo "starting worker"
+    worker &
+    echo "starting proxy"
+    proxy &
+    vault server -config /vault/config/local.json;
+

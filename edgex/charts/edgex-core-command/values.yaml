@@ -1,0 +1,2 @@
+image: edgexfoundry/docker-core-command-go:0.7.1
+init_wait: false

@@ -1,0 +1,50 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-support-rulesengine
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-support-rulesengine
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-support-rulesengine
+    spec:
+      containers:
+      - name: edgex-support-rulesengine
+        image: {{ .Values.image }}
+        env:
+        - name: PATH
+          value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        - name: APP_DIR
+          value: "/edgex/edgex-support-rulesengine"
+        - name: TEMPLATE_DIR
+          value: "/edgex/edgex-support-rulesengine/templates"
+        - name: APP
+          value: "support-rulesengine.jar"
+        - name: APP_PORT
+          value: "48075"
+        ports:
+        - containerPort: 48075
+        #command: ["/bin/sh", "-c", "java -jar -Djava.security.egd=file:/dev/urandom -Xmx100M $APP"]
+        command:
+        {{ range .Values.command }}
+        - {{ . }}
+        {{ end }}
+        volumeMounts:
+        - name: support-rulesengine-volume
+          mountPath: /edgex/edgex-support-rulesengine/application.properties
+          subPath: application.properties
+        - name: support-rulesengine-volume
+          mountPath: /edgex/edgex-support-rulesengine/bootstrap.properties
+          subPath: bootstrap.properties
+      volumes:
+      - name: support-rulesengine-volume
+        configMap:
+          name: {{ .Release.Name }}-edgex-support-rulesengine
+
+

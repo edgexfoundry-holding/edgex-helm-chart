@@ -1,0 +1,45 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-edgex-mongo
+  labels:
+    app: {{ .Release.Name }}-edgex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-edgex-mongo
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-edgex-mongo
+    spec:
+      containers:
+      - name: edgex-mongo
+        image: {{ .Values.image }}
+        env:
+        - name: PATH
+          value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        - name: GOSU_VERSION
+          value: "1.7"
+        - name: GPG_KEYS
+          value: "0C49F3730359A14518585931BC711F9BA15703C6"
+        - name: MONGO_PACKAGE
+          value: "mongodb-org"
+        - name: MONGO_REPO
+          value: "repo.mongodb.org"
+        - name: MONGO_MAJOR
+          value: "3.4"
+        - name: MONGO_VERSION
+          value: "3.4.9"
+        - name: SLEEP_TIME_BEFORE_CONFIG
+          value: "10"
+        ports:
+        - containerPort: 27017
+        command: ["/bin/sh", "-c", "/edgex/mongo/config/launch-edgex-mongo.sh"]
+        readinessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - "db.adminCommand('ping')"
