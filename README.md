@@ -14,7 +14,7 @@ It contains charts for the following projects:
   
 WARNING: This project is based on the [EdgeX Docker Compose scripts](https://github.com/edgexfoundry/developer-scripts). 
 This project is not secure and is not suitable for production use. See Known Security Issues below.
-Note: This is based on EdgeX Foundry Deli release.
+Note: This is based on EdgeX Foundry Delhi release.
 
 ### Usage
 
